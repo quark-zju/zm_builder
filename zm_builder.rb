@@ -40,26 +40,7 @@ CHARS_PER_LINE = (ENV['CHARS_PER_LINE'] || 88).to_i # 112 if scriptsize
 MAIN_FONT = ENV['MAIN_FONT'] || 'TeX Gyre Pagella'
 CJK_FONT = ENV['CJK_FONT'] || 'Adobe 黑体 Std'
 MONO_FONT = ENV['MONO_FONT'] || 'Consolas'
-
-TRANSLATES = { 
-  '几何' => 'Geometry',
-  '组合' => 'Permutation',
-  '结构' => 'Structures',
-  '数论' => 'Number Theory',
-  '数值计算' => 'Numerical',
-  '数值' => 'Numerical',
-  '图论_NP搜索' => 'Graph_NP Searching',
-  '图论_匹配' => 'Graph_Matching',
-  '图论_应用' => 'Graph_Applications',
-  '图论_最短路' => 'Graph_Shortest Path',
-  '图论_生成树' => 'Graph_Spanning Tree',
-  '图论_网络流' => 'Graph_Network Flow',
-  '图论_连通性' => 'Graph_Connectivity',
-  '应用' => 'Applications',
-  '其他' => 'Others',
-  '附录_应用' => 'Appendix_Applications',
-  '附录_结构' => 'Appendix_Structures',
-}
+ORDERS_FILE = File.join(BASE_PATH, 'orders.txt')
 
 # print basic information
 puts "\nREQUIRED PROGRAMS:".green.bold
@@ -264,15 +245,18 @@ $tex_file.puts <<"HEAD_END"
 \\tableofcontents
 HEAD_END
 
-# process builtin folders
-TRANSLATES.each do |key, value|
-  process_folder key # ,value # now use chinese titles
+# process folders in 'orders'
+orders = []
+if File.exists?(ORDERS_FILE)
+  orders = File.read(ORDERS_FILE).each_line.to_a.map(&:chomp)
+  orders.each do |name|
+    process_folder name
+  end
 end
 
 # process other folders
 Dir.foreach BASE_PATH do |name|
-  next if name[0] == '.' or TRANSLATES[name]
-  next unless File.directory? "#{BASE_PATH}/#{name}"
+  next if name[0] == '.' || orders.include?(name)
   process_folder name
 end
 
