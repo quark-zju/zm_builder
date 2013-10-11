@@ -23,7 +23,6 @@
 #
 
 require 'fileutils'
-require 'iconv'
 require 'digest'
 require 'term/ansicolor'
 
@@ -89,16 +88,18 @@ end
 # prepare output dir
 FileUtils.mkdir_p OUTPUT_PATH
 
-# prepare pygments tex theme
+# prepare pygments tex theme, with minor changes:
+# - add underline for numbers
+# - add background to comments
 pygment_style = `pygmentize -S emacs -f latex`
-# add underline for numbers
-pygment_style.gsub! '\def\PY@tok@m{', '\def\PY@tok@m{\let\PY@ul=\underline'
-# add background to comments
-# seems directly modify c1 style has no effect:
-#   pygment_style.gsub! '\def\PY@tok@c1{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.00,0.53,0.00}{##1}}}', '\def\PY@tok@c1{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.00,0.53,0.00}{##1}}\def\PY@bc##1{\colorbox[rgb]{0.80,0.95,0.85}{##1}}}'
-# then modify c style, and modify cp(#include, etc) style to white background
-pygment_style.gsub! '\def\PY@tok@c{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.00,0.53,0.00}{##1}}}', '\def\PY@tok@c{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.00,0.53,0.00}{##1}}\def\PY@bc##1{\colorbox[rgb]{0.80,0.95,0.85}{##1}}}'
-pygment_style.gsub! '\def\PY@tok@cp{\def\PY@tc##1{\textcolor[rgb]{0.00,0.53,0.00}{##1}}}', '\def\PY@tok@cp{\def\PY@tc##1{\textcolor[rgb]{0.00,0.53,0.00}{##1}}\def\PY@bc##1{\colorbox[rgb]{1.0,1.0,1.0}{##1}}}'
+# For pygments 1.4
+pygment_style.gsub! '\def\PY@tok@m{', '\0\let\PY@ul=\underline'
+pygment_style.gsub! '\def\PY@tok@c{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.00,0.53,0.00}{##1}}', '\0\def\PY@bc##1{\colorbox[rgb]{0.80,0.95,0.85}{##1}}'
+pygment_style.gsub! '\def\PY@tok@cp{\def\PY@tc##1{\textcolor[rgb]{0.00,0.53,0.00}{##1}}', '\0\def\PY@bc##1{\colorbox[rgb]{1.0,1.0,1.0}{##1}}'
+# For pygments 1.6
+pygment_style.gsub! 'PY@tok@m\endcsname{', '\0\let\PY@ul=\underline'
+pygment_style.gsub! /(PY@tok@c[m1]\\endcsname{.*)(\\textcolor.*})$/, '\1\colorbox[rgb]{0.80,0.95,0.85}{\strut\2}'
+
 File.open("#{OUTPUT_PATH}/pygments.tex", 'w') { |f| f.puts pygment_style }
 
 # prepare tex file
@@ -179,7 +180,7 @@ def process_file(file, type)
     when :cpp, :java, :pas
       system "astyle -A2 -c -s4 -k3 -n '#{output_file}'" if [ :cpp, :java ].include? type
       line_wrap output_file
-      throw 'Pygmentize Error' unless system "pygmentize -l #{type} -f latex -P encoding=utf-8 -o '#{output_file}.out' '#{output_file}'"
+      raise 'Pygmentize Error' unless system "pygmentize -l #{type} -f latex -P encoding=utf-8 -o '#{output_file}.out' '#{output_file}'"
       FileUtils.mv "#{output_file}.out", output_file
     end
   else
@@ -291,7 +292,7 @@ puts "\nPROCESSING TEX:".green.bold
   puts "Executing xelatex (#{n+1}/3)..."
   unless system "xelatex -halt-on-error -interaction=errorstopmode #{OUTPUT_FILE}.tex < /dev/null > /dev/null 2> /dev/null"
     puts "\n#{'xelatex error'.red.bold}, please check xelatex log file in #{OUTPUT_PATH.bold}"
-    throw 'Xelatex Error'
+    raise 'Xelatex Error'
   end
 end
 
