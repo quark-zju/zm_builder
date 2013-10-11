@@ -24,7 +24,6 @@
 
 require 'fileutils'
 require 'digest'
-require 'iconv'
 require 'term/ansicolor'
 
 # extend String class
@@ -148,11 +147,8 @@ def process_file(file, type)
 
     # check encoding, convert gb18030 to utf8 if necessary
     if `file '#{output_file}'` =~ /ISO/
-      # convert it to utf8
-      puts "non utf-8, convert from gb18030..."
-      ic = Iconv.new('UTF-8//IGNORE//TRANSLIT', 'GB18030')
-      gbk_content = File.open(output_file, 'r:gb18030') { |file| file.read }
-      File.open(output_file, 'w:utf-8') { |file| file.write(ic.iconv(gbk_content)) }
+      # disallow GBK files
+      throw "GBK file is not allowed. Please use UTF-8: #{output_file}"
     end
 
     # processing related to type
