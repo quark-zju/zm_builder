@@ -24,6 +24,7 @@
 
 require 'fileutils'
 require 'digest'
+require 'iconv'
 require 'term/ansicolor'
 
 # extend String class
