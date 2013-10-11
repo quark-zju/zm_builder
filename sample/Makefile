@@ -12,4 +12,4 @@ output.pdf: build/output.pdf
 	cp $^ $@
 
 build/output.pdf: ../zm_builder.rb src
-	PAGE_FOOTER='Sample' ../zm_builder.rb ./src/
+	PAGE_FOOTER='Sample' bundle exec ../zm_builder.rb ./src/
