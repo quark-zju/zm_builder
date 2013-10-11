@@ -67,7 +67,7 @@ puts "\nREQUIRED PROGRAMS:".green.bold
 [ :pygmentize, :xelatex, :astyle, :'fc-match' ].each do |p|
   print "#{p.to_s.bold} => "
   found = system("which #{p}")
-  throw 'Required Program missing' if not found
+  raise "Required Program missing: #{p}" if not found
 end
 
 puts "\nPARAMETERS:".green.bold
@@ -82,7 +82,7 @@ puts "\nREQUIRED FONTS:".green.bold
   else
     puts fc_match
     puts "Not found".red.bold
-    throw 'Font missing'
+    raise "Font missing: #{f}"
   end
 end
 
@@ -111,7 +111,7 @@ def simple_hash(str)
   $sha1_hasher.reset
   $sha1_hasher.update str
   result = $sha1_hasher.to_s
-  throw 'Hash Conflict!' if $hashed[result]
+  raise "Hash Conflict! (#{result})" if $hashed[result]
   $hashed[result] = true
   result
 end
